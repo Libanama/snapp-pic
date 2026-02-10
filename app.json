@@ -1,29 +1,37 @@
 {
   "expo": {
-    "name": "snapp-pic",
-    "slug": "snapp-pic",
+    "name": "snap-pic",
+    "slug": "snap-pic",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+      "package": "com.Libanama.snappic",
+      "orientation": "portrait",
+      "icon": "./assets/icon.png",
+      "userInterfaceStyle": "light",
+      "newArchEnabled": true,
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "ios": {
+        "supportsTablet": true
+      },
+      "android": {
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/adaptive-icon.png",
+          "backgroundColor": "#ffffff"
+        },
+        "edgeToEdgeEnabled": true
+      },
+      "web": {
+        "favicon": "./assets/favicon.png"
+      }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "7d6a8e9a-553f-416a-9b4a-768081828ac9"
+      }
     }
   }
 }

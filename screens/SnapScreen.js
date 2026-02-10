@@ -4,24 +4,54 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { addPhoto } from '../reducers/photos';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
-// Liste des filtres disponibles
+// Liste des filtres avec leurs propriétés CSS
 const FILTERS = [
-  { id: 'original', name: 'Original', icon: 'circle-o' },
-  { id: 'bw', name: 'N&B', icon: 'adjust' },
-  { id: 'sepia', name: 'Sépia', icon: 'sun-o' },
-  { id: 'vintage', name: 'Vintage', icon: 'film' },
-  { id: 'cool', name: 'Cool', icon: 'snowflake-o' },
-  { id: 'warm', name: 'Warm', icon: 'fire' },
+  { 
+    id: 'original', 
+    name: 'Original', 
+    icon: 'circle-o',
+    overlay: null
+  },
+  { 
+    id: 'bw', 
+    name: 'N&B', 
+    icon: 'adjust',
+    overlay: 'rgba(0, 0, 0, 0.5)',
+    grayscale: true
+  },
+  { 
+    id: 'sepia', 
+    name: 'Sépia', 
+    icon: 'sun-o',
+    overlay: 'rgba(112, 66, 20, 0.4)'
+  },
+  { 
+    id: 'vintage', 
+    name: 'Vintage', 
+    icon: 'film',
+    overlay: 'rgba(255, 222, 173, 0.3)'
+  },
+  { 
+    id: 'cool', 
+    name: 'Cool', 
+    icon: 'snowflake-o',
+    overlay: 'rgba(0, 150, 255, 0.2)'
+  },
+  { 
+    id: 'warm', 
+    name: 'Warm', 
+    icon: 'fire',
+    overlay: 'rgba(255, 140, 0, 0.25)'
+  },
 ];
 
 export default function SnapScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [photo, setPhoto] = useState(null);
-  const [filteredPhoto, setFilteredPhoto] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('original');
   const [facing, setFacing] = useState('back');
+  const [flash, setFlash] = useState('off');
   const cameraRef = useRef(null);
   const dispatch = useDispatch();
 
@@ -65,7 +95,6 @@ export default function SnapScreen() {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
       setPhoto(photo.uri);
-      setFilteredPhoto(photo.uri);
       setSelectedFilter('original');
     }
   };
@@ -75,121 +104,139 @@ export default function SnapScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  // Fonction pour appliquer un filtre
-  const applyFilter = async (filterType) => {
-    setSelectedFilter(filterType);
+  // Fonction pour changer le flash
+  const toggleFlash = () => {
+    if (flash === 'off') setFlash('on');
+    else if (flash === 'on') setFlash('auto');
+    else setFlash('off');
+  };
 
-    if (filterType === 'original') {
-      setFilteredPhoto(photo);
-      return;
-    }
-
-    try {
-      let actions = [];
-
-      switch (filterType) {
-        case 'bw':
-          // Noir & Blanc : réduire la saturation à 0
-          actions = [
-            { resize: { width: 1000 } }, // Optimisation
-          ];
-          break;
-        case 'sepia':
-          // Sépia : teinte chaude
-          actions = [
-            { resize: { width: 1000 } },
-          ];
-          break;
-        case 'vintage':
-          // Vintage : légère décoloration
-          actions = [
-            { resize: { width: 1000 } },
-          ];
-          break;
-        case 'cool':
-          // Cool : teinte bleue
-          actions = [
-            { resize: { width: 1000 } },
-          ];
-          break;
-        case 'warm':
-          // Warm : teinte chaude orange
-          actions = [
-            { resize: { width: 1000 } },
-          ];
-          break;
-      }
-
-      const result = await manipulateAsync(
-        photo,
-        actions,
-        { compress: 0.9, format: SaveFormat.JPEG }
-      );
-
-      setFilteredPhoto(result.uri);
-    } catch (error) {
-      console.error('Erreur application filtre:', error);
-    }
+  // Obtenir le filtre actuel
+  const getCurrentFilter = () => {
+    return FILTERS.find(f => f.id === selectedFilter) || FILTERS[0];
   };
 
   // Fonction pour sauvegarder
   const savePhoto = () => {
-    dispatch(addPhoto(filteredPhoto || photo));
+    dispatch(addPhoto(photo));
     setPhoto(null);
-    setFilteredPhoto(null);
     setSelectedFilter('original');
   };
 
-  // Si une photo vient d'être prise, on l'affiche
-if (photo) {
-  return (
-    <SafeAreaView style={styles.previewContainer}>
-      <Image source={{ uri: photo }} style={styles.preview} />
-      
-      {/* Header avec titre */}
-      <View style={styles.previewHeader}>
-        <Text style={styles.previewTitle}>Aperçu de la photo</Text>
-      </View>
+  // Si une photo vient d'être prise, on l'affiche avec les filtres
+  if (photo) {
+    const currentFilter = getCurrentFilter();
+    
+    return (
+      <SafeAreaView style={styles.previewContainer}>
+        <View style={styles.preview}>
+          <Image 
+            source={{ uri: photo }} 
+            style={styles.previewImage}
+          />
+          {/* Overlay pour les filtres */}
+          {currentFilter.overlay && (
+            <View 
+              style={[
+                styles.filterOverlay, 
+                { backgroundColor: currentFilter.overlay }
+              ]} 
+            />
+          )}
+        </View>
+        
+        {/* Header avec titre */}
+        <View style={styles.previewHeader}>
+          <Text style={styles.previewTitle}>Aperçu de la photo</Text>
+        </View>
 
-      {/* Boutons d'action */}
-      <View style={styles.previewActions}>
-        <TouchableOpacity 
-          style={styles.retakeButton}
-          onPress={() => {
-            setPhoto(null);
-            setFilteredPhoto(null);
-            setSelectedFilter('original');
-          }}
-          activeOpacity={0.8}
-        >
-          <FontAwesome name="refresh" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Reprendre</Text>
-        </TouchableOpacity>
+        {/* Sélection des filtres */}
+        <View style={styles.filtersContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersScroll}
+          >
+            {FILTERS.map((filter) => (
+              <TouchableOpacity
+                key={filter.id}
+                style={[
+                  styles.filterButton,
+                  selectedFilter === filter.id && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedFilter(filter.id)}
+                activeOpacity={0.7}
+              >
+                <FontAwesome 
+                  name={filter.icon} 
+                  size={24} 
+                  color={selectedFilter === filter.id ? '#e8be4b' : '#fff'} 
+                />
+                <Text style={[
+                  styles.filterText,
+                  selectedFilter === filter.id && styles.filterTextActive
+                ]}>
+                  {filter.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-        <TouchableOpacity 
-          style={styles.saveButton}
-          onPress={() => {
-            dispatch(addPhoto(photo));
-            setPhoto(null);
-          }}
-          activeOpacity={0.8}
-        >
-          <FontAwesome name="check" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Sauvegarder</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
+        {/* Boutons d'action */}
+        <View style={styles.previewActions}>
+          <TouchableOpacity 
+            style={styles.retakeButton}
+            onPress={() => {
+              setPhoto(null);
+              setSelectedFilter('original');
+            }}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="refresh" size={18} color="#fff" />
+            <Text style={styles.buttonText}>Reprendre</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={savePhoto}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="check" size={18} color="#fff" />
+            <Text style={styles.buttonText}>Sauvegarder</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Affichage de la caméra
   return (
     <View style={styles.cameraContainer}>
-      <CameraView style={styles.camera} ref={cameraRef} facing={facing}>
+      <CameraView 
+        style={styles.camera} 
+        ref={cameraRef} 
+        facing={facing}
+        flash={flash}
+      >
         {/* Header */}
         <SafeAreaView style={styles.cameraHeader}>
           <Text style={styles.cameraTitle}>Prendre une photo</Text>
         </SafeAreaView>
+
+        {/* Bouton Flash */}
+        <TouchableOpacity 
+          style={styles.flashButton}
+          onPress={toggleFlash}
+          activeOpacity={0.8}
+        >
+          <FontAwesome 
+            name={flash === 'off' ? 'flash' : flash === 'on' ? 'bolt' : 'adjust'} 
+            size={24} 
+            color={flash === 'off' ? '#fff' : '#e8be4b'} 
+          />
+          <Text style={styles.flashText}>{flash.toUpperCase()}</Text>
+        </TouchableOpacity>
 
         {/* Bouton pour inverser la caméra */}
         <TouchableOpacity 
@@ -302,6 +349,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  flashButton: {
+    position: 'absolute',
+    top: 70,
+    left: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  flashText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
   flipButton: {
     position: 'absolute',
     top: 70,
@@ -309,7 +375,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -347,6 +413,18 @@ const styles = StyleSheet.create({
   preview: {
     flex: 1,
     width: '100%',
+    position: 'relative',
+  },
+  previewImage: {
+    flex: 1,
+    width: '100%',
+  },
+  filterOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   previewHeader: {
     position: 'absolute',
@@ -366,24 +444,25 @@ const styles = StyleSheet.create({
   // Filtres
   filtersContainer: {
     position: 'absolute',
-    bottom: 130,
+    bottom: 110,
     width: '100%',
-    height: 90,
+    height: 100,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   filtersScroll: {
     paddingHorizontal: 15,
     alignItems: 'center',
+    paddingVertical: 10,
   },
   filterButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 10,
+    marginHorizontal: 8,
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    minWidth: 70,
+    minWidth: 65,
   },
   filterButtonActive: {
     backgroundColor: 'rgba(232, 190, 75, 0.3)',
@@ -392,7 +471,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 5,
     fontWeight: '600',
   },
@@ -401,45 +480,44 @@ const styles = StyleSheet.create({
   },
 
   // Actions
-previewActions: {
-  position: 'absolute',
-  bottom: 40,
-  flexDirection: 'row',
-  alignSelf: 'center',
-  gap: 15,
-  paddingHorizontal: 20,
-},
-retakeButton: {
-  flexDirection: 'row',
-  backgroundColor: '#666',
-  paddingHorizontal: 20,
-  paddingVertical: 12,
-  borderRadius: 10,
-  alignItems: 'center',
-  gap: 8,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 5,
-},
-saveButton: {
-  flexDirection: 'row',
-  backgroundColor: '#e8be4b',
-  paddingHorizontal: 20,
-  paddingVertical: 12,
-  borderRadius: 10,
-  alignItems: 'center',
-  gap: 8,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 5,
-},
-buttonText: {
-  color: '#fff',
-  fontSize: 15,
-  fontWeight: 'bold',
-},
+  previewActions: {
+    position: 'absolute',
+    bottom: 30,
+    flexDirection: 'row',
+    alignSelf: 'center',
+    gap: 15,
+  },
+  retakeButton: {
+    flexDirection: 'row',
+    backgroundColor: '#666',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  saveButton: {
+    flexDirection: 'row',
+    backgroundColor: '#e8be4b',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
 });
