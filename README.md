@@ -112,7 +112,9 @@ npx expo install expo-linear-gradient
 
 ## 📱 Captures d'écran
 
-*(À ajouter : captures d'écran de HomeScreen, GalleryScreen, SnapScreen)*
+<p align="center">
+   <img src="screenshots/snap-pic.jpg" width="200" alt="Lumière allumée"/>
+ </p>  
 
 ## 🔐 Permissions
 
@@ -164,3 +166,5 @@ Projet réalisé dans le cadre de ma formation de développeur web avec l'aide d
 ---
 
 ⭐ **N'hésitez pas à mettre une étoile si vous aimez le projet !**
+
+---\n📅 Dernière mise à jour : 11/02/2026
