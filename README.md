@@ -70,7 +70,7 @@ snap-pic/
 
 1. **Cloner le repository** :
 ```bash
-   git clone https://github.com/TON-USERNAME/snap-pic.git
+   git https://github.com/Libanama/snapp-pic.git
    cd snap-pic
 ```
 
